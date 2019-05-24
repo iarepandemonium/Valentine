@@ -1,0 +1,6 @@
+name: Valentine
+version: 1.0
+description: Valentine Plugin
+main: com.knockturnmc.Valentine.Valentine
+commands:
+  love:

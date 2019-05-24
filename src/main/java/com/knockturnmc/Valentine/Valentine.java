@@ -72,6 +72,7 @@ public class Valentine extends JavaPlugin {
     } catch (Exception e) {
       lover.sendMessage(ChatColor.RED + "Either that person isn't online or that isn't a person.");
     }
+    
     lover.sendMessage(ChatColor.DARK_RED + args[0] + " has been added as your love.");
     return true;
   }
