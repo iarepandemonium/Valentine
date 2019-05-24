@@ -2,7 +2,9 @@ package com.knockturnmc.Valentine;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Particle;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
@@ -17,29 +19,37 @@ import java.util.UUID;
 
 public class Valentine extends JavaPlugin {
 
-  private Map<UUID, UUID> loves = new HashMap<UUID, UUID>();
+  private Map<UUID, UUID> loves = new HashMap<>();
   private FileConfiguration config;
 
   public void onEnable() {
     this.config = this.getConfig();
 
     final ConfigurationSection locations = config.getConfigurationSection("Valentines");
-    for (String path : locations.getKeys(false)) {
-      loves.put(UUID.fromString(path), UUID.fromString(config.getString(path)));
+    if (locations != null && config != null) {
+      for (String path : locations.getKeys(false)) {
+        String love = config.getString(path);
+        if (love == null) continue;
+
+        loves.put(UUID.fromString(path), UUID.fromString(love));
+      }
     }
 
-    Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+    Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
+      for (Entry<UUID, UUID> e : loves.entrySet()) {
+        Player lover = Bukkit.getPlayer(e.getKey());
+        Player loved = Bukkit.getPlayer(e.getValue());
+        if (lover == null || loved == null) continue;
 
-      public void run() {
-        for (Entry<UUID, UUID> e : loves.entrySet()) {
-          Player lover = Bukkit.getPlayer(e.getKey());
-          Player loved = Bukkit.getPlayer(e.getValue());
-          if (lover.isOnline() && loved.isOnline() &&
-                  lover.getLocation().distance(loved.getLocation()) < 5) {
-            lover.getLocation().getWorld().spawnParticle(Particle.HEART, lover.getLocation(), 1);
-          }
+        Location loverL = lover.getLocation();
+        Location lovedL = loved.getLocation();
+
+        if (lover.isOnline() && loved.isOnline() && loverL.distance(lovedL) < 5) {
+          World world = loverL.getWorld();
+          if (world == null) continue;
+
+          world.spawnParticle(Particle.HEART, loverL, 1);
         }
-
       }
 
     }, 0L, 600L);
@@ -67,12 +77,15 @@ public class Valentine extends JavaPlugin {
     }
 
     Player lover = (Player) sender;
-    try {
-      loves.put(lover.getUniqueId(), Bukkit.getPlayer(args[0]).getUniqueId());
-    } catch (Exception e) {
+
+    Player loved = Bukkit.getPlayer(args[0]);
+    if (loved == null) {
       lover.sendMessage(ChatColor.RED + "Either that person isn't online or that isn't a person.");
+      return false;
     }
-    
+    loves.put(lover.getUniqueId(), loved.getUniqueId());
+
+
     lover.sendMessage(ChatColor.DARK_RED + args[0] + " has been added as your love.");
     return true;
   }
